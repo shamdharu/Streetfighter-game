@@ -1,0 +1,172 @@
+/* ===== Stickman Rampage — styles ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: #07070d;
+  overflow: hidden;
+  font-family: "Trebuchet MS", "Segoe UI", Arial, sans-serif;
+  color: #fff;
+}
+
+#game-wrap {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#game-canvas {
+  display: block;
+  width: min(100vw, 177.78vh);   /* 16:9 aspect, fits screen */
+  height: min(56.25vw, 100vh);
+  background: #101018;
+  image-rendering: auto;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+}
+
+/* ===== Overlay screens ===== */
+#overlay {
+  position: absolute;
+  /* Match the canvas box exactly */
+  width: min(100vw, 177.78vh);
+  height: min(56.25vw, 100vh);
+  pointer-events: none;
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 6, 14, 0.88);
+  pointer-events: auto;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.screen.hidden { display: none; }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.panel {
+  text-align: center;
+  padding: 4% 6%;
+  max-width: 86%;
+}
+
+.logo {
+  font-size: clamp(28px, 7vh, 64px);
+  font-weight: 900;
+  letter-spacing: 4px;
+  line-height: 0.95;
+  color: #f5f5f5;
+  text-shadow: 4px 4px 0 #e63946, 8px 8px 0 rgba(0, 0, 0, 0.5);
+}
+
+.logo span {
+  display: block;
+  color: #ffd60a;
+  text-shadow: 4px 4px 0 #ff8500, 8px 8px 0 rgba(0, 0, 0, 0.5);
+}
+
+h2 {
+  font-size: clamp(26px, 6vh, 52px);
+  font-weight: 900;
+  letter-spacing: 6px;
+  margin-bottom: 18px;
+  text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.6);
+}
+
+h2.bad  { color: #ff4d6d; }
+h2.good { color: #52ff8f; }
+
+.tagline {
+  margin-top: 12px;
+  color: #c9c9d6;
+  font-size: clamp(12px, 2.2vh, 17px);
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: repeat(4, auto);
+  gap: 8px 18px;
+  margin: 22px auto 12px;
+  justify-content: center;
+}
+
+.controls div {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  padding: 6px 12px;
+  min-width: 92px;
+}
+
+.controls b {
+  display: block;
+  color: #ffd60a;
+  font-size: clamp(12px, 2.2vh, 16px);
+  letter-spacing: 1px;
+}
+
+.controls span {
+  font-size: clamp(10px, 1.8vh, 13px);
+  color: #b9b9c9;
+}
+
+.combo-tip {
+  color: #8ff0ff;
+  font-size: clamp(11px, 2vh, 15px);
+  margin-bottom: 18px;
+}
+
+.combo-tip b { color: #ffd60a; }
+
+.stat-line {
+  font-size: clamp(13px, 2.6vh, 19px);
+  color: #d7d7e3;
+  margin: 6px 0;
+}
+
+.stat-line b { color: #ffd60a; }
+
+.btn {
+  display: block;
+  margin: 14px auto 6px;
+  padding: 12px 38px;
+  font-size: clamp(15px, 3vh, 22px);
+  font-weight: 900;
+  letter-spacing: 3px;
+  color: #141414;
+  background: #ffd60a;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 5px 0 #b8960a;
+  transition: transform 0.06s, box-shadow 0.06s, background 0.15s;
+}
+
+.btn:hover  { background: #ffe44d; }
+.btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #b8960a; }
+
+.btn.secondary {
+  background: #5a5a72;
+  color: #fff;
+  box-shadow: 0 5px 0 #33334a;
+}
+
+.btn.secondary:hover { background: #6d6d8c; }
+
+.hint {
+  margin-top: 10px;
+  font-size: clamp(10px, 1.9vh, 14px);
+  color: #7d7d92;
+  letter-spacing: 2px;
+}
