@@ -250,7 +250,72 @@ game.spawnParticles(game.player.x, game.player.y - 30, 20, '#fff', 'ring');
 frames(500);
 assert(game.particles.length <= 260, 'particle cap: ' + game.particles.length);
 
-// 17) victory path: jump to final level, beat boss, expect victory screen
+// 17) escalating style ladders: each key press unlocks a NEW style
+game.enemies = [];
+if (game.player.dead) {
+  game.player.dead = false;
+  game.player.state = 'idle';
+  game.player.rot = 0;
+}
+game.player.hp = game.player.maxHp;
+game.player.hitstun = 0;
+game.player.invuln = 60;
+game.player.attack = null;
+game.player.weapon = null;
+assert(game.state === 'playing', 'playing before style tests');
+
+function runChain(key, polls, seen) {
+  press(key); frames(3); release(key);
+  for (let j = 0; j < polls; j++) {
+    frames(1);
+    if (game.player.attack) seen.add(game.player.attack.name);
+  }
+}
+
+// K → kick1 → kick2 (roundhouse) → kick3 (tornado)
+const seenK = new Set();
+runChain('KeyK', 14, seenK);
+runChain('KeyK', 16, seenK);
+runChain('KeyK', 60, seenK);
+assert(seenK.has('kick1') && seenK.has('kick2') && seenK.has('kick3'),
+  'K ladder styles: ' + [...seenK].join(','));
+frames(20);
+
+// J → punch1 → punch2 (hook) → punch3 (uppercut)
+const seenJ = new Set();
+runChain('KeyJ', 14, seenJ);
+runChain('KeyJ', 16, seenJ);
+runChain('KeyJ', 60, seenJ);
+assert(seenJ.has('punch1') && seenJ.has('punch2') && seenJ.has('punch3'),
+  'J ladder styles: ' + [...seenJ].join(','));
+frames(20);
+
+// L → weaponSwing → weaponSwing2 (reverse) → weaponSwing3 (finisher)
+game.player.weapon = { def: WEAPONS.bat, ammo: -1 };
+const seenL = new Set();
+runChain('KeyL', 15, seenL);
+runChain('KeyL', 17, seenL);
+runChain('KeyL', 60, seenL);
+assert(seenL.has('weaponSwing') && seenL.has('weaponSwing2') && seenL.has('weaponSwing3'),
+  'weapon ladder styles: ' + [...seenL].join(','));
+frames(20);
+
+// Q drops the weapon as a world pickup
+const beforeDrops = game.level.weapons.length;
+press('KeyQ'); frames(4); release('KeyQ'); frames(4);
+assert(!game.player.weapon, 'Q drops weapon');
+assert(game.level.weapons.length === beforeDrops + 1,
+  'dropped weapon becomes a pickup');
+
+// rifle autofire while L is held
+game.player.weapon = { def: WEAPONS.rifle, ammo: 50 };
+press('KeyL'); frames(60); release('KeyL'); frames(40);
+assert(game.player.weapon && game.player.weapon.ammo < 48,
+  'rifle autofires while held, ammo=' + (game.player.weapon && game.player.weapon.ammo));
+game.player.weapon = null;
+frames(20);
+
+// 18) victory path: jump to final level, beat boss, expect victory screen
 game.startLevel(2);
 assert(game.state === 'playing', 'level 3 starts');
 game.player.x = game.level.def.boss.trigger + 10;

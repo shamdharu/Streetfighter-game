@@ -13,61 +13,96 @@ const GRAVITY = 0.72;
 /* chain: buffered input code -> next attack (combo routes) */
 
 const PLAYER_ATTACKS = {
-  punch1: {
+  punch1: { // JAB — base style
     name: 'punch1', f: { s: 4, a: 4, r: 9 },
     dmg: 6, reach: 46, h: 26, oy: 56, kb: 4, kby: 0,
     hitstop: 5, shake: 1.5, sound: 'punch', hitSound: 'hit',
+    fx: '#ffe066',
     chain: { KeyJ: 'punch2', KeyK: 'kick1' }
   },
-  punch2: {
-    name: 'punch2', f: { s: 4, a: 4, r: 9 },
-    dmg: 7, reach: 48, h: 26, oy: 56, kb: 4.5, kby: 0,
-    hitstop: 5, shake: 1.5, sound: 'punch', hitSound: 'hit',
-    chain: { KeyJ: 'punch3', KeyK: 'kick1' }
+  punch2: { // HOOK — new style: spins into the arm, cyan trail
+    name: 'punch2', f: { s: 4, a: 5, r: 11 },
+    dmg: 8, reach: 52, h: 30, oy: 56, kb: 6, kby: 2,
+    spin: Math.PI * 0.6,
+    arc: { cy: -44, color: '#7ad7ff' },
+    hitstop: 6, shake: 3, sound: 'punch', hitSound: 'hit',
+    fx: '#7ad7ff', styleName: 'HOOK!',
+    chain: { KeyJ: 'punch3', KeyK: 'kick2' }
   },
-  punch3: { // heavy punch finisher
-    name: 'punch3', f: { s: 7, a: 5, r: 15 },
-    dmg: 13, reach: 54, h: 34, oy: 62, kb: 10, kby: 4,
-    hitstop: 9, shake: 5, sound: 'heavy', hitSound: 'hit',
+  punch3: { // UPPERCUT — finisher: launches enemy, orange burst, small hop
+    name: 'punch3', f: { s: 7, a: 6, r: 17 },
+    dmg: 15, reach: 50, h: 46, oy: 64, kb: 7, kby: 10,
+    hop: -4,
+    hitstop: 11, shake: 6, sound: 'heavy', hitSound: 'heavy',
+    fx: '#ff8500', fxType: 'finish', styleName: 'UPPERCUT!',
     chain: {}
   },
-  kick1: {
+  kick1: { // SNAP KICK — base style
     name: 'kick1', f: { s: 6, a: 5, r: 11 },
     dmg: 10, reach: 54, h: 30, oy: 46, kb: 6, kby: 2,
     hitstop: 6, shake: 2.5, sound: 'kick', hitSound: 'hit',
-    chain: { KeyK: 'kickHeavy', KeyJ: 'punch2' }
+    fx: '#ffe066',
+    chain: { KeyK: 'kick2', KeyJ: 'punch2' }
   },
-  kickHeavy: { // heavy kick finisher
-    name: 'kickHeavy', f: { s: 8, a: 6, r: 17 },
-    dmg: 16, reach: 62, h: 44, oy: 64, kb: 13, kby: 7,
-    hitstop: 11, shake: 7, sound: 'heavy', hitSound: 'heavy',
+  kick2: { // ROUNDHOUSE — new style: 180° body spin + yellow swoosh
+    name: 'kick2', f: { s: 7, a: 6, r: 14 },
+    dmg: 13, reach: 62, h: 38, oy: 58, kb: 9, kby: 4,
+    spin: Math.PI * 0.9,
+    arc: { cy: -36, color: '#ffd60a' },
+    hitstop: 8, shake: 5, sound: 'kick', hitSound: 'heavy',
+    fx: '#ffd60a', styleName: 'ROUNDHOUSE!',
+    chain: { KeyK: 'kick3', KeyJ: 'punch3' }
+  },
+  kick3: { // TORNADO — finisher: hops + full 360° spin, orange arc, huge knockback
+    name: 'kick3', f: { s: 8, a: 8, r: 18 },
+    dmg: 19, reach: 68, h: 54, oy: 66, kb: 15, kby: 8,
+    spin: Math.PI * 2, hop: -9,
+    arc: { cy: -40, color: '#ff8500' },
+    hitstop: 13, shake: 8, sound: 'heavy', hitSound: 'heavy',
+    fx: '#ff8500', fxType: 'finish', styleName: 'TORNADO KICK!',
     chain: {}
   },
   lowKick: {
     name: 'lowKick', f: { s: 5, a: 5, r: 13 },
     dmg: 8, reach: 52, h: 24, oy: 26, kb: 5, kby: 1,
     hitstop: 6, shake: 2, sound: 'kick', hitSound: 'hit',
-    chain: { KeyK: 'kickHeavy', KeyJ: 'punch1' }
+    fx: '#ffe066',
+    chain: { KeyK: 'kick2', KeyJ: 'punch1' }
   },
   airPunch: {
     name: 'airPunch', f: { s: 4, a: 6, r: 8 },
     dmg: 8, reach: 46, h: 30, oy: 54, kb: 5, kby: 0,
     hitstop: 5, shake: 2, sound: 'punch', hitSound: 'hit',
+    fx: '#ffe066',
     chain: {}
   },
   airKick: {
     name: 'airKick', f: { s: 5, a: 10, r: 8 },
     dmg: 13, reach: 56, h: 40, oy: 50, kb: 8, kby: 3,
     hitstop: 8, shake: 4, sound: 'kick', hitSound: 'heavy',
+    fx: '#ffd60a', fxType: 'finish',
     chain: {}
   },
   special: { // radial energy blast
     name: 'special', f: { s: 9, a: 5, r: 24 },
     dmg: 24, radius: 115, kb: 15, kby: 9,
     hitstop: 11, shake: 10, sound: 'special', hitSound: 'heavy',
-    energy: 35, chain: {}
+    energy: 35, fx: '#7ad7ff', fxType: 'finish',
+    chain: {}
   }
 };
+
+/* Melee weapon swing ladder: press L again mid-swing to climb the
+ * chain — swing → REVERSE sweep → spinning FINISHER, then back to
+ * the base swing. */
+const WEAPON_SWING_STYLES = [
+  { pose: 'weaponSwing',  dmg: 1.0, spd: 1.0,  kb: 1.0, shake: 1.0,
+    reach: 0,   hop: 0,     spin: 0,           name: null },
+  { pose: 'weaponSwing2', dmg: 1.2, spd: 0.9,  kb: 1.3, shake: 1.25,
+    reach: 4,   hop: 0,     spin: 0,           name: 'REVERSE!' },
+  { pose: 'weaponSwing3', dmg: 1.8, spd: 1.1,  kb: 2.0, shake: 1.9,
+    reach: 14,  hop: -6,    spin: Math.PI * 2, name: 'FINISHER!' }
+];
 
 /* ---------------- weapons ---------------- */
 /* Melee weapons have infinite ammo (ammo = -1). */
@@ -77,13 +112,13 @@ const WEAPONS = {
     id: 'bat', name: 'BAT', kind: 'melee', ammo: -1,
     dmg: 14, reach: 74, h: 40, oy: 62, kb: 9, kby: 4,
     f: { s: 6, a: 5, r: 13 }, hitstop: 8, shake: 4,
-    sound: 'swing', hitSound: 'heavy', color: '#b5713a'
+    sound: 'thwack', hitSound: 'heavy', color: '#b5713a'
   },
   sword: {
     id: 'sword', name: 'SWORD', kind: 'melee', ammo: -1,
     dmg: 23, reach: 88, h: 48, oy: 68, kb: 12, kby: 6,
     f: { s: 8, a: 5, r: 17 }, hitstop: 10, shake: 6,
-    sound: 'swing', hitSound: 'heavy', color: '#c9d1d9'
+    sound: 'slash', hitSound: 'heavy', color: '#c9d1d9'
   },
   pistol: {
     id: 'pistol', name: 'PISTOL', kind: 'gun', ammo: 14,
@@ -248,8 +283,14 @@ const Combat = {
 
     game.hitstop(atk.hitstop || 5);
     game.shake(atk.shake || 2);
-    game.spawnParticles(px, py, 8 + Math.min(10, (atk.shake || 2) * 2), '#ffe066', 'spark');
-    game.spawnParticles(px, py, 4, '#ffffff', 'ring');
+    const fx = atk.fx || '#ffe066';
+    game.spawnParticles(px, py, 8 + Math.min(12, (atk.shake || 2) * 2), fx, 'spark');
+    game.spawnParticles(px, py, atk.fxType === 'finish' ? 7 : 4, '#ffffff', 'ring');
+    if (atk.fxType === 'finish') {
+      // finishers throw extra stars for extra style
+      game.spawnParticles(px, py, 8, fx, 'star');
+      game.addText(px, py - 30, 'SMASH!', fx);
+    }
     if (game.audio[atk.hitSound]) game.audio[atk.hitSound]();
     else game.audio.hit();
 

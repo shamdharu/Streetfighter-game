@@ -26,18 +26,23 @@ Then open http://localhost:8080
 | S / Down | Crouch (hold on a platform to drop through) |
 | J | Punch |
 | K | Kick (S+K = low kick, in air = jump kick) |
-| L | Weapon attack / shoot |
+| L | Weapon attack / shoot (hold with rifle = autofire) |
+| Q | Drop current weapon |
 | SPACE | Special attack (costs energy) |
 | P / ESC | Pause |
 | M | Mute / unmute |
 | ENTER | Confirm menus |
 
-### Combo routes
+### Combo style ladder (each press = a NEW style, then it resets)
 
-- J J J = punch, punch, **heavy punch**
-- J J K K = punch, punch, kick, **heavy kick**
-- S+K = low kick (chains into heavy kick)
-- Air K = jump kick
+- **K** → snap kick, **K K** → ROUNDHOUSE (180° spin + yellow swoosh),
+  **K K K** → TORNADO KICK (hop + full 360° spin + orange burst finisher)
+- **J** → jab, **J J** → HOOK (spinning arm + cyan trail), **J J J** → UPPERCUT
+  (launches enemies + orange burst)
+- **L L L** (melee weapon) → swing → REVERSE sweep → spinning FINISHER
+- Finishers cause extra hit-stop, screen shake, star bursts and a
+  "SMASH!" popup — then the chain returns to the base style.
+- S+K = low kick (chains into the kick ladder); air K = jump kick
 - Land hits within 2.5s to build the **COMBO** counter and score multiplier.
 
 ## Game systems

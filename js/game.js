@@ -452,10 +452,12 @@ class Game {
 
     for (let i = 0; i < lvl.weapons.length; i++) {
       const w = lvl.weapons[i];
-      if (w.taken) continue;
+      if (w.taken || w.delay > 0) continue;
       const dx = w.x - p.x, dy = (w.y - 20) - (p.y - p.h * 0.5);
       if (dx * dx + dy * dy < 46 * 46) {
         w.taken = true;
+        // swapping drops your old weapon right here instead of deleting it
+        if (p.weapon) this.dropWeapon(w.x, w.y);
         const def = WEAPONS[w.wid];
         p.weapon = { def: def, ammo: (w.ammo != null ? w.ammo : def.ammo) };
         this.audio.powerup();
@@ -464,6 +466,24 @@ class Game {
         this.addScore(75);
       }
     }
+  }
+
+  /** Drop the held weapon as a collectable (Q key / weapon swap). */
+  dropWeapon(x, y) {
+    const p = this.player;
+    if (!p || !p.weapon) return;
+    const w = p.weapon;
+    this.level.weapons.push({
+      x: (x != null) ? x : p.x + p.facing * 24,
+      y: (y != null) ? y : this.level.groundY - 18,
+      wid: w.def.id,
+      ammo: w.ammo,
+      t: 0, taken: false,
+      delay: 25 // brief grace period so you don't instantly re-pick it up
+    });
+    p.weapon = null;
+    this.audio.dry();
+    this.addText(p.x, p.y - p.h - 20, 'DROPPED ' + w.def.name, '#c9c9d6');
   }
 
   _applyPickup(type, x, y) {
@@ -591,7 +611,8 @@ class Game {
               x: pr.x - Math.sign(pr.vx) * 24, y: pr.y, h: 0, facing: -Math.sign(pr.vx)
             }, en, {
               dmg: pr.dmg, kb: pr.kb, kby: pr.kby,
-              hitstop: 5, shake: 3, hitSound: 'hit', stun: 16
+              hitstop: 5, shake: 3, hitSound: 'hit', stun: 16,
+              fx: pr.color || '#ffe066'
             });
             this.spawnParticles(pr.x, pr.y, 7, pr.color || '#ffe066', 'spark');
             dead = true;
@@ -606,7 +627,8 @@ class Game {
               x: pr.x - Math.sign(pr.vx) * 24, y: pr.y, h: 0, facing: -Math.sign(pr.vx)
             }, p, {
               dmg: pr.dmg, kb: pr.kb, kby: pr.kby,
-              hitstop: 5, shake: 3, hitSound: 'hit', stun: 16
+              hitstop: 5, shake: 3, hitSound: 'hit', stun: 16,
+              fx: pr.color || '#ffe066'
             });
             this.spawnParticles(pr.x, pr.y, 7, pr.color || '#ffe066', 'spark');
             dead = true;

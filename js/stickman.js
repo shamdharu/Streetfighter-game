@@ -55,21 +55,27 @@ const ATTACK_POSES = {
     cock:  { armF: [-0.5, -1.6], armB: [0.5, -0.6], lean: -0.06 },
     strike:{ armF: [1.55, 0.0],  armB: [-0.7, -1.4], lean: 0.2 }
   },
-  punch2: {
-    cock:  { armF: [-0.6, -1.7], armB: [0.6, -0.5], lean: -0.08 },
-    strike:{ armF: [1.6, 0.0],   armB: [-0.8, -1.5], lean: 0.24 }
+  punch2: { // HOOK — arm swings across, body spins into it
+    cock:  { armF: [-1.2, -1.6], armB: [0.7, -0.4], lean: -0.14, crouch: 0.12 },
+    strike:{ armF: [1.5, -0.7],  armB: [-1.1, -1.3], lean: 0.4, crouch: 0.18 }
   },
-  punch3: { // heavy overhand
-    cock:  { armF: [-2.2, -0.6], armB: [0.4, -1.2], lean: -0.3, crouch: 0.08 },
-    strike:{ armF: [1.1, 0.7],   armB: [-0.9, -1.3], lean: 0.42, crouch: 0.14 }
+  punch3: { // UPPERCUT — drops low then rips upward
+    cock:  { armF: [0.9, -1.7], armB: [0.5, -1.0], lean: -0.2, crouch: 0.55 },
+    strike:{ armF: [2.7, -0.4], armB: [-1.3, -1.1], lean: -0.4, crouch: 0.05 }
   },
-  kick1: {
+  kick1: { // front snap kick
     cock:  { legF: [-0.45, -1.0], lean: 0.12, armF: [0.6, -0.9], armB: [-0.7, -0.7] },
     strike:{ legF: [1.5, -0.15],  lean: -0.28, armF: [-0.7, -1.0], armB: [-1.3, -0.5] }
   },
-  kickHeavy: {
-    cock:  { legF: [-0.5, -1.3], lean: 0.14, crouch: 0.12, armF: [0.7, -1.1] },
-    strike:{ legF: [1.9, -0.05], lean: -0.46, crouch: 0.1, armF: [-0.8, -1.2], armB: [-1.5, -0.6] }
+  kick2: { // ROUNDHOUSE — leg horizontal, torso leaning away
+    cock:  { legF: [-0.6, -1.5], lean: 0.25, crouch: 0.18, armF: [0.6, -1.2] },
+    strike:{ legF: [1.75, -0.05], lean: -0.75, crouch: 0.05,
+             armF: [-1.3, -1.1], armB: [-1.9, -0.7] }
+  },
+  kick3: { // TORNADO — spinning split kick
+    cock:  { legF: [0.1, -1.7], legB: [-0.5, -1.6], lean: 0.1, crouch: 0.3, armF: [-1.0, -1.4] },
+    strike:{ legF: [1.6, -0.25], legB: [-1.1, -1.7], lean: -0.5,
+             armF: [-1.5, -1.3], armB: [-1.8, -0.9] }
   },
   lowKick: {
     cock:  { crouch: 0.5, legF: [-0.3, -0.9], lean: -0.05 },
@@ -83,9 +89,17 @@ const ATTACK_POSES = {
     cock:  { legF: [0.3, -1.4], legB: [-0.4, -1.5], armF: [0.8, -0.9] },
     strike:{ legF: [1.7, -0.2], legB: [-0.8, -1.5], armF: [-0.9, -1.2], armB: [-1.4, -0.4], lean: -0.32 }
   },
-  weaponSwing: {
+  weaponSwing: { // horizontal slash
     cock:  { armF: [-1.7, -1.3], armB: [-0.4, -0.9], lean: -0.16 },
     strike:{ armF: [1.45, 0.3],  armB: [-0.9, -1.2], lean: 0.3 }
+  },
+  weaponSwing2: { // reverse / low sweep
+    cock:  { armF: [1.3, -1.5], armB: [-0.5, -0.8], lean: 0.25, crouch: 0.35 },
+    strike:{ armF: [1.6, -0.15], armB: [-1.2, -1.0], lean: -0.3, crouch: 0.3 }
+  },
+  weaponSwing3: { // overhead finisher
+    cock:  { armF: [-3.0, -0.15], armB: [-1.4, -0.9], lean: -0.35, crouch: 0.25 },
+    strike:{ armF: [1.2, 0.9], armB: [-1.0, -1.2], lean: 0.55, crouch: 0.2 }
   },
   shoot: {
     cock:  { armF: [1.5, -0.05], armB: [-0.3, -1.4], lean: 0.12 },
@@ -359,11 +373,18 @@ function drawStickman(ctx, e, poseOverride) {
 
   ctx.save();
 
-  // whole-body rotation (spinning deaths / knockdowns)
-  if (e.rot) {
+  // whole-body rotation: corpse/death rot, or attack-driven spin (combo styles)
+  let rot = e.rot || 0;
+  if (!rot && e.attack && e.attack.def && e.attack.def.spin) {
+    const fd = e.attack.def.f;
+    const total = fd.s + fd.a + fd.r;
+    const prog = Math.max(0, Math.min(1, (e.attack.t || 0) / total));
+    rot = (e.facing >= 0 ? 1 : -1) * e.attack.def.spin * prog;
+  }
+  if (rot) {
     const pivotY = e.y - 30 * s;
     ctx.translate(e.x, pivotY);
-    ctx.rotate(e.rot);
+    ctx.rotate(rot);
     ctx.translate(-e.x, -pivotY);
   }
 
@@ -504,5 +525,30 @@ function drawShadow(ctx, e, groundY) {
   ctx.beginPath();
   ctx.ellipse(e.x, groundY + 4, w, 5.5 * (e.scale || 1), 0, 0, Math.PI * 2);
   ctx.fill();
+  ctx.restore();
+}
+
+/**
+ * Sweeping "swoosh" arc shown while a styled swing is active.
+ * The arc travels with the attack progress so every style leaves
+ * a different coloured trail.
+ */
+function drawSwingArc(ctx, e, color, prog, cy, r) {
+  const f = e.facing >= 0 ? 1 : -1;
+  ctx.save();
+  ctx.translate(e.x, 0);
+  ctx.scale(f, 1);
+  ctx.translate(-e.x, 0);
+  const start = -2.1 + prog * 2.5;
+  ctx.globalAlpha = 0.75 * (1 - prog * 0.45);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 8;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.arc(e.x + 8, e.y + (cy || -40), Math.max(20, r), start, start + 1.05);
+  ctx.stroke();
+  ctx.globalAlpha = 0.35 * (1 - prog * 0.45);
+  ctx.lineWidth = 16;
+  ctx.stroke();
   ctx.restore();
 }

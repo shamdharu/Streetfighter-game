@@ -83,6 +83,8 @@ class AudioSys {
   /* ---- weapons ---- */
   gun()   { this._noise(0.07, 0.4, 3200, 700, 'highpass'); this._tone(150, 45, 'square', 0.06, 0.24); }
   dry()   { this._tone(220, 180, 'square', 0.05, 0.14); }
+  thwack(){ this._noise(0.1, 0.3, 800, 200, 'lowpass'); this._tone(230, 90, 'triangle', 0.09, 0.24); }
+  slash() { this._noise(0.14, 0.28, 1600, 5500, 'highpass'); this._tone(900, 300, 'sine', 0.1, 0.14); }
 
   /* ---- pickups / ui ---- */
   pickup()     { this._tone(660, null, 'square', 0.07, 0.2); this._tone(990, null, 'square', 0.1, 0.2, 0.07); }

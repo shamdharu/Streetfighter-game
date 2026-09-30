@@ -128,6 +128,11 @@ class Player {
       this.vx = 0;
     }
 
+    // drop the held weapon where you stand
+    if (input.justPressed('KeyQ') && this.weapon) {
+      this.game.dropWeapon();
+    }
+
     // ---- attack inputs ----
     if (input.justPressed('Space') && this.energy >= PLAYER_ATTACKS.special.energy) {
       this._startAttack('special', PLAYER_ATTACKS.special);
@@ -143,6 +148,11 @@ class Player {
       } else if (input.justPressed('KeyK')) {
         this._startAttack('kick1', PLAYER_ATTACKS.kick1);
       } else if (input.justPressed('KeyL')) {
+        this._startWeaponAttack();
+      }
+      // rifle: hold L to keep firing
+      if (!this.attack && this.weapon && this.weapon.def.kind === 'gun' &&
+          this.weapon.def.id === 'rifle' && input.isDown('KeyL')) {
         this._startWeaponAttack();
       }
     }
@@ -177,12 +187,18 @@ class Player {
     this.state = 'attack';
     this.h = 70;
     this.vx = 0;
+    if (def.styleName) {
+      // announce the new style when a chain step unlocks
+      this.game.addText(this.x, this.y - this.h - 34, def.styleName,
+        def.fx || '#ffd60a');
+      this.game.audio.combo(1);
+    }
   }
 
-  _startWeaponAttack() {
+  _startWeaponAttack(idx) {
     const w = this.weapon;
     if (!w) {
-      // unarmed: heavy punch acts as the L fallback
+      // unarmed: uppercut acts as the L fallback
       this._startAttack('punch3', PLAYER_ATTACKS.punch3);
       return;
     }
@@ -192,18 +208,42 @@ class Player {
         dmg: w.def.dmg, kb: w.def.kb, kby: w.def.kby || 0,
         hitstop: w.def.hitstop, shake: w.def.shake,
         sound: w.def.sound, hitSound: w.def.hitSound,
+        fx: w.def.color2 || w.def.color,
         chain: {}
       });
-    } else {
-      this._startAttack('weaponSwing', {
-        name: 'weaponSwing', f: w.def.f,
-        dmg: w.def.dmg, reach: w.def.reach, h: w.def.h, oy: w.def.oy,
-        kb: w.def.kb, kby: w.def.kby,
-        hitstop: w.def.hitstop, shake: w.def.shake,
-        sound: w.def.sound, hitSound: w.def.hitSound,
-        chain: {}
-      });
+      return;
     }
+
+    // ---- melee swing ladder: swing → REVERSE → spinning FINISHER ----
+    idx = idx || 0;
+    const st = WEAPON_SWING_STYLES[idx];
+    const b = w.def;
+    const spd = st.spd;
+    const def = {
+      name: st.pose, widx: idx,
+      f: {
+        s: Math.max(3, Math.round(b.f.s * spd)),
+        a: Math.max(3, Math.round(b.f.a * spd)),
+        r: Math.max(5, Math.round(b.f.r * spd))
+      },
+      dmg: Math.round(b.dmg * st.dmg),
+      reach: b.reach + st.reach,
+      h: b.h + (idx === 2 ? 12 : 0),
+      oy: b.oy,
+      kb: b.kb * st.kb,
+      kby: (b.kby || 0) + (idx === 2 ? 6 : 0),
+      spin: st.spin || 0,
+      hop: st.hop || 0,
+      arc: { cy: -b.oy + 16, color: b.color },
+      hitstop: b.hitstop + idx * 2,
+      shake: b.shake * st.shake,
+      sound: b.sound, hitSound: b.hitSound,
+      fx: b.color,
+      fxType: idx === 2 ? 'finish' : null,
+      styleName: st.name,
+      chain: {}
+    };
+    this._startAttack(st.pose, def);
   }
 
   _updateAttack(dt, input) {
@@ -238,6 +278,13 @@ class Player {
         this._startAttack(next, PLAYER_ATTACKS[next]);
         return;
       }
+      // melee weapon ladder: L → L → L climbs swing → reverse → finisher
+      if (this.buffer === 'KeyL' && a.def.widx != null &&
+          this.weapon && this.weapon.def.kind === 'melee' &&
+          a.def.widx < WEAPON_SWING_STYLES.length - 1) {
+        this._startWeaponAttack(a.def.widx + 1);
+        return;
+      }
       this.attack = null;
       this.buffer = null;
       this.state = this.grounded ? 'idle' : 'fall';
@@ -250,8 +297,16 @@ class Player {
     if (def.name === 'special') return; // handled in active
     if (def.gun) { this.game.audio.gun(); return; }
     if (def.sound) this.game.audio[def.sound]();
-    if (this.grounded && def.reach) {
-      this.vx = this.facing * 2.2; // small forward lunge
+    const wasGrounded = this.grounded;
+    // forward lunge on grounded swings
+    if (wasGrounded && def.reach) {
+      this.vx = this.facing * (def.widx != null ? 2.6 : 2.2);
+    }
+    // styled attacks can leave the ground (uppercut hop, tornado, finisher)
+    if (def.hop && wasGrounded) {
+      this.vy = def.hop;
+      this.grounded = false;
+      this.game.audio.jump();
     }
   }
 
@@ -366,6 +421,12 @@ class Player {
     drawShadow(ctx, this, gy);
     drawStickman(ctx, this);
     this._drawWeapon(ctx);
+
+    // styled swing trail (only while the swing is active)
+    if (this.attack && this.attack.phase === 'active' && this.attack.def.arc) {
+      drawSwingArc(ctx, this, this.attack.def.arc.color, this.attack.prog,
+        this.attack.def.arc.cy, (this.attack.def.reach || 50) * 0.8);
+    }
 
     // speed buff trail
     if (this.buffSpeed > 0 && Math.abs(this.vx) > 3) {

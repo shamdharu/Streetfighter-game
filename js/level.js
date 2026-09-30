@@ -304,7 +304,10 @@ class Level {
     }
     for (let i = 0; i < this.weapons.length; i++) {
       const w = this.weapons[i];
-      if (!w.taken) w.t += dt;
+      if (!w.taken) {
+        w.t += dt;
+        if (w.delay > 0) w.delay -= dt;
+      }
     }
   }
 
